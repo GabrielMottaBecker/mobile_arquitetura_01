@@ -8,11 +8,8 @@ class Product {
   final double ratingRate;
   final int ratingCount;
 
-  /// true  → produto criado localmente (não veio da API)
-  /// false → produto sincronizado com a API remota
   final bool isLocal;
 
-  /// true → produto marcado como favorito pelo usuário
   final bool isFavorite;
 
   const Product({

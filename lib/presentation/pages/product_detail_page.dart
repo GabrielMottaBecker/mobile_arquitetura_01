@@ -14,20 +14,24 @@ class ProductDetailPage extends StatefulWidget {
 class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _isDeleting = false;
 
+  // Produto local mutável — atualizado após cada edição bem-sucedida
+  late Product _product;
+  late ProductViewModel _vm;
+  bool _argsLoaded = false;
+
   // ── Cores dos ícones de ação ─────────────────────────────────────
   static const _iconColor = Color(0xFF424242); // cinza escuro visível
 
   // ── Delete com confirmação ───────────────────────────────────────
 
-  Future<void> _confirmDelete(
-      BuildContext context, Product product, ProductViewModel vm) async {
+  Future<void> _confirmDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Confirmar exclusão'),
         content: Text(
-            'Deseja realmente remover "${product.title}"? Esta ação não pode ser desfeita.'),
+            'Deseja realmente remover "${_product.title}"? Esta ação não pode ser desfeita.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -45,7 +49,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (confirmed != true || !mounted) return;
 
     setState(() => _isDeleting = true);
-    final success = await vm.deleteProduct(product.id!);
+    final success = await _vm.deleteProduct(_product.id!);
     if (!mounted) return;
     setState(() => _isDeleting = false);
 
@@ -70,23 +74,30 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   // ── Navegação para edição ────────────────────────────────────────
 
-  Future<void> _goToEdit(
-      BuildContext context, Product product, ProductViewModel vm) async {
-    await Navigator.push(
+  Future<void> _goToEdit(BuildContext context) async {
+    final result = await Navigator.push<Product>(
       context,
       MaterialPageRoute(
-        builder: (_) => ProductFormPage(viewModel: vm, product: product),
+        builder: (_) => ProductFormPage(viewModel: _vm, product: _product),
       ),
     );
-    if (mounted) setState(() {});
+
+    // Se o form retornou um Product atualizado, reflete na tela imediatamente
+    if (result != null && mounted) {
+      setState(() => _product = result);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final args =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final product = args['product'] as Product;
-    final vm = args['viewModel'] as ProductViewModel;
+    // Carrega os args apenas na primeira vez; depois usa o state local
+    if (!_argsLoaded) {
+      final args =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+      _product = args['product'] as Product;
+      _vm = args['viewModel'] as ProductViewModel;
+      _argsLoaded = true;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -110,7 +121,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               IconButton(
                 icon: const Icon(Icons.edit_outlined, color: _iconColor),
                 tooltip: 'Editar produto',
-                onPressed: () => _goToEdit(context, product, vm),
+                onPressed: () => _goToEdit(context),
               ),
               // Botão Excluir
               _isDeleting
@@ -127,7 +138,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       icon: const Icon(Icons.delete_outline,
                           color: Colors.redAccent),
                       tooltip: 'Excluir produto',
-                      onPressed: () => _confirmDelete(context, product, vm),
+                      onPressed: () => _confirmDelete(context),
                     ),
               IconButton(
                 icon: const Icon(Icons.home_outlined, color: _iconColor),
@@ -142,7 +153,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 color: Colors.white,
                 padding: const EdgeInsets.fromLTRB(24, 80, 24, 16),
                 child: Image.network(
-                  product.image,
+                  _product.image,
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) => const Icon(
                     Icons.image_not_supported_outlined,
@@ -173,7 +184,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          product.category.toUpperCase(),
+                          _product.category.toUpperCase(),
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -184,18 +195,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                       const SizedBox(width: 8),
                       // Badge API / LOCAL
-                      _OriginBadge(isLocal: product.isLocal),
+                      _OriginBadge(isLocal: _product.isLocal),
                       const Spacer(),
                       _RatingBadge(
-                          rate: product.ratingRate,
-                          count: product.ratingCount),
+                          rate: _product.ratingRate,
+                          count: _product.ratingCount),
                     ],
                   ),
                   const SizedBox(height: 14),
 
                   // Título
                   Text(
-                    product.title,
+                    _product.title,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -221,7 +232,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             style: TextStyle(
                                 color: Colors.white70, fontSize: 14)),
                         Text(
-                          'R\$ ${product.price.toStringAsFixed(2)}',
+                          'R\$ ${_product.price.toStringAsFixed(2)}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -248,7 +259,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               iconColor: Colors.amber,
                               label: 'Nota',
                               value:
-                                  product.ratingRate.toStringAsFixed(1),
+                                  _product.ratingRate.toStringAsFixed(1),
                             ),
                           ),
                           Container(
@@ -260,7 +271,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               icon: Icons.people_outline,
                               iconColor: const Color(0xFF6A1B9A),
                               label: 'Avaliações',
-                              value: product.ratingCount.toString(),
+                              value: _product.ratingCount.toString(),
                             ),
                           ),
                           Container(
@@ -272,7 +283,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               icon: Icons.tag,
                               iconColor: Colors.blueGrey,
                               label: 'ID',
-                              value: '#${product.id}',
+                              value: '#${_product.id}',
                             ),
                           ),
                         ],
@@ -295,7 +306,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        product.description,
+                        _product.description,
                         style: const TextStyle(
                           fontSize: 14,
                           height: 1.6,

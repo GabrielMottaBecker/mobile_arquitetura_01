@@ -1,3 +1,4 @@
+import '../../auth/session/session_controller.dart';
 import 'package:flutter/material.dart';
 import '../../core/routes/app_routes.dart';
 import '../../domain/entities/product.dart';
@@ -42,6 +43,28 @@ class _ProductPageState extends State<ProductPage> {
     }
   }
 
+  /// Recarrega os produtos manualmente (botão refresh).
+  Future<void> _refreshProducts() async {
+    await widget.viewModel.loadProducts();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Produtos atualizados!'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  /// Encerra a sessão e volta para o login.
+  Future<void> _logout() async {
+    await SessionController.instance.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(
+        context, AppRoutes.login, (route) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,13 +75,43 @@ class _ProductPageState extends State<ProductPage> {
         backgroundColor: const Color(0xFF6A1B9A),
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-          tooltip: 'Voltar ao início',
-        ),
+        automaticallyImplyLeading: false, // sem botão voltar (sessão ativa)
         actions: [
-          // Botão filtro de favoritos
+          // Avatar + nome do usuário → abre perfil
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  Builder(builder: (_) {
+                    final user = SessionController.instance.user;
+                    if (user == null) return const SizedBox.shrink();
+                    return Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.white24,
+                          backgroundImage: user.image.isNotEmpty
+                              ? NetworkImage(user.image)
+                              : null,
+                          child: user.image.isEmpty
+                              ? const Icon(Icons.person,
+                                  size: 18, color: Colors.white)
+                              : null,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(user.firstName,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14)),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+          // Filtro favoritos
           ValueListenableBuilder<ProductState>(
             valueListenable: widget.viewModel.state,
             builder: (_, state, __) {
@@ -73,10 +126,23 @@ class _ProductPageState extends State<ProductPage> {
               );
             },
           ),
+          // Sincronizar
           IconButton(
             icon: const Icon(Icons.sync, color: Colors.white),
             tooltip: 'Sincronizar com API',
             onPressed: _syncProducts,
+          ),
+          // Refresh manual
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Atualizar lista',
+            onPressed: _refreshProducts,
+          ),
+          // Logout
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Sair',
+            onPressed: _logout,
           ),
         ],
       ),

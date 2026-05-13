@@ -3,22 +3,17 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/product_model.dart';
 
-/// Gerencia toda a persistência local.
-///
-/// • Em dispositivos móveis/desktop → SQLite via sqflite.
-/// • Em Flutter Web (onde sqflite não é suportado) → armazenamento
-///   em memória, suficiente para fins didáticos durante a sessão.
 class ProductLocalDatasource {
   static final ProductLocalDatasource _instance =
       ProductLocalDatasource._internal();
   factory ProductLocalDatasource() => _instance;
   ProductLocalDatasource._internal();
 
-  // ── Armazenamento em memória (usado apenas na Web) ─────────────
+  // Memória (Web) 
   final List<ProductModel> _memoryStore = [];
   int _nextId = 1000;
 
-  // ── SQLite (usado em mobile / desktop) ─────────────────────────
+  // SQLite 
   Database? _db;
 
   Future<Database> get _database async {
@@ -28,20 +23,11 @@ class ProductLocalDatasource {
 
   Future<Database> _initDb() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'produtos.db');
+    final path = join(dbPath, 'produtos_v3.db'); // versão nova evita conflito
     return openDatabase(
       path,
-      version: 2,
+      version: 1,
       onCreate: (db, _) => _createTables(db),
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          // Migração: adiciona coluna isLocal se vier de versão anterior
-          try {
-            await db.execute(
-                'ALTER TABLE products ADD COLUMN isLocal INTEGER NOT NULL DEFAULT 0');
-          } catch (_) {}
-        }
-      },
     );
   }
 
@@ -51,17 +37,17 @@ class ProductLocalDatasource {
         id INTEGER PRIMARY KEY,
         title TEXT NOT NULL,
         price REAL NOT NULL,
-        image TEXT NOT NULL,
+        thumbnail TEXT NOT NULL,
         description TEXT NOT NULL,
         category TEXT NOT NULL,
-        ratingRate REAL NOT NULL DEFAULT 0,
-        ratingCount INTEGER NOT NULL DEFAULT 0,
+        rating REAL NOT NULL DEFAULT 0,
+        stock INTEGER NOT NULL DEFAULT 0,
         isLocal INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
 
-  // ── Leitura ────────────────────────────────────────────────────
+  // Get 
 
   Future<bool> get hasData async {
     if (kIsWeb) return _memoryStore.isNotEmpty;
@@ -86,13 +72,12 @@ class ProductLocalDatasource {
       }
     }
     final db = await _database;
-    final maps =
-        await db.query('products', where: 'id = ?', whereArgs: [id]);
+    final maps = await db.query('products', where: 'id = ?', whereArgs: [id]);
     if (maps.isEmpty) return null;
     return ProductModel.fromMap(maps.first);
   }
 
-  // ── Escrita ────────────────────────────────────────────────────
+  // Insert 
 
   Future<int> insertProduct(ProductModel product) async {
     if (kIsWeb) {
@@ -106,11 +91,11 @@ class ProductLocalDatasource {
           id: newId,
           title: product.title,
           price: product.price,
-          image: product.image,
+          thumbnail: product.thumbnail,
           description: product.description,
           category: product.category,
-          ratingRate: product.ratingRate,
-          ratingCount: product.ratingCount,
+          rating: product.rating,
+          stock: product.stock,
           isLocal: product.isLocal,
         ));
         return newId;

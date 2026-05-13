@@ -1,7 +1,7 @@
-name: mobile_arquitetura_02
-description: "Atividade 02 - CRUD Completo com Flutter e FakeStore API"
+name: shop_app
+description: "CRUD Completo de produtos com Autenticação JWT e DummyJSON API"
 publish_to: 'none'
-version: 2.0.0+1
+version: 3.0.0+1
 
 environment:
   sdk: ^3.9.0
@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   http: ^1.2.0
+  shared_preferences: ^2.3.2
   sqflite: ^2.3.3+1
   path: ^1.9.0
 

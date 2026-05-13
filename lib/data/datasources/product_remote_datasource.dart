@@ -3,14 +3,16 @@ import '../models/product_model.dart';
 
 class ProductRemoteDatasource {
   final HttpClient client;
-  static const _baseUrl = 'https://fakestoreapi.com/products';
+
+  static const _baseUrl = 'https://dummyjson.com/products';
 
   ProductRemoteDatasource(this.client);
 
   Future<List<ProductModel>> getProducts() async {
     final response = await client.get(_baseUrl);
-    final List data = response.data as List;
-    return data
+    final data = response.data as Map<String, dynamic>;
+    final list = data['products'] as List;
+    return list
         .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
@@ -21,8 +23,7 @@ class ProductRemoteDatasource {
   }
 
   Future<ProductModel> createProduct(ProductModel product) async {
-    final response = await client.post(_baseUrl, product.toJson());
-    // A FakeStore API retorna o produto criado com id gerado
+    final response = await client.post('$_baseUrl/add', product.toJson());
     return ProductModel.fromJson(response.data as Map<String, dynamic>);
   }
 

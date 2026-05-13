@@ -88,7 +88,8 @@ class _ProductFormPageState extends State<ProductFormPage> {
           : 'Produto cadastrado com sucesso!';
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
-      Navigator.pop(context, true);
+      // Retorna o produto salvo para que a tela de detalhes possa se atualizar
+      Navigator.pop(context, product);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

@@ -5,14 +5,15 @@ import 'data/datasources/product_local_datasource.dart';
 import 'data/datasources/product_remote_datasource.dart';
 import 'data/repositories/product_repository_impl.dart';
 import 'presentation/pages/home_page.dart';
+import 'presentation/pages/login_page.dart';
 import 'presentation/pages/product_detail_page.dart';
 import 'presentation/pages/product_form_page.dart';
 import 'presentation/pages/product_page.dart';
+import 'presentation/pages/profile_page.dart';
+import 'presentation/pages/splash_page.dart';
 import 'presentation/viewmodels/product_viewmodel.dart';
 
 void main() async {
-  // Obrigatório antes de qualquer operação assíncrona no main()
-  // e necessário para inicializar o sqflite corretamente
   WidgetsFlutterBinding.ensureInitialized();
 
   final httpClient = HttpClient();
@@ -42,13 +43,15 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      initialRoute: AppRoutes.home,
+      initialRoute: AppRoutes.splash,
       routes: {
+        AppRoutes.splash: (_) => const SplashPage(),
+        AppRoutes.login: (_) => const LoginPage(),
         AppRoutes.home: (_) => const HomePage(),
         AppRoutes.products: (_) => ProductPage(viewModel: viewModel),
         AppRoutes.productDetail: (_) => const ProductDetailPage(),
-        AppRoutes.productCreate: (_) =>
-            ProductFormPage(viewModel: viewModel),
+        AppRoutes.productCreate: (_) => ProductFormPage(viewModel: viewModel),
+        AppRoutes.profile: (_) => const ProfilePage(),
         AppRoutes.productEdit: (ctx) {
           final args = ModalRoute.of(ctx)!.settings.arguments
               as Map<String, dynamic>;
