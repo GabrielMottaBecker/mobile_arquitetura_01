@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
 import 'product_state.dart';
+import '../../core/errors/failure.dart';
 
 class ProductViewModel {
   final ProductRepository repository;
@@ -22,6 +23,10 @@ class ProductViewModel {
         status: ProductStatus.success,
         products: products,
       );
+    } on UnauthorizedFailure {
+      state.value = state.value.copyWith(
+        status: ProductStatus.unauthorized,
+      );
     } catch (e) {
       state.value = state.value.copyWith(
         status: ProductStatus.error,
@@ -38,6 +43,10 @@ class ProductViewModel {
       state.value = state.value.copyWith(
         status: ProductStatus.success,
         products: products,
+      );
+    } on UnauthorizedFailure {
+      state.value = state.value.copyWith(
+        status: ProductStatus.unauthorized,
       );
     } catch (e) {
       state.value = state.value.copyWith(
@@ -59,13 +68,17 @@ class ProductViewModel {
         products: updated,
       );
       return true;
+    } on UnauthorizedFailure {
+      state.value = state.value.copyWith(
+        status: ProductStatus.unauthorized,
+      );
     } catch (e) {
       state.value = state.value.copyWith(
         status: ProductStatus.error,
         errorMessage: e.toString(),
       );
-      return false;
     }
+    return false;
   }
 
   // ── Update ──────────────────────────────────────────────────────
@@ -81,13 +94,17 @@ class ProductViewModel {
         products: list,
       );
       return true;
+    } on UnauthorizedFailure {
+      state.value = state.value.copyWith(
+        status: ProductStatus.unauthorized,
+      );
     } catch (e) {
       state.value = state.value.copyWith(
         status: ProductStatus.error,
         errorMessage: e.toString(),
       );
-      return false;
     }
+    return false;
   }
 
   // ── Delete ──────────────────────────────────────────────────────
@@ -101,13 +118,17 @@ class ProductViewModel {
         products: list,
       );
       return true;
+    } on UnauthorizedFailure {
+      state.value = state.value.copyWith(
+        status: ProductStatus.unauthorized,
+      );
     } catch (e) {
       state.value = state.value.copyWith(
         status: ProductStatus.error,
         errorMessage: e.toString(),
       );
-      return false;
     }
+    return false;
   }
 
   // ── Favorites ───────────────────────────────────────────────────

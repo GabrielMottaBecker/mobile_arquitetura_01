@@ -13,8 +13,8 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _isDeleting = false;
+  bool _isLoadingDetail = false; 
 
-  // Produto local mutável — atualizado após cada edição bem-sucedida
   late Product _product;
   late ProductViewModel _vm;
   bool _argsLoaded = false;
@@ -88,6 +88,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
+  Future<void> _fetchProductDetail(int id) async {
+    setState(() => _isLoadingDetail = true);
+    try {
+      final updated = await _vm.repository.getProductById(id);
+      if (updated != null && mounted) {
+        setState(() => _product = updated.copyWith(isFavorite: _product.isFavorite));
+      }
+    } catch (_) {
+      // falha silenciosa — mantém o produto recebido via arguments
+    } finally {
+      if (mounted) setState(() => _isLoadingDetail = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Carrega os args apenas na primeira vez; depois usa o state local
@@ -97,7 +111,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       _product = args['product'] as Product;
       _vm = args['viewModel'] as ProductViewModel;
       _argsLoaded = true;
+
+    // Chama GET /products/{id} para buscar dados atualizados da API
+    if (_product.id != null) {
+      _fetchProductDetail(_product.id!);
     }
+}
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -205,15 +224,32 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   const SizedBox(height: 14),
 
                   // Título
-                  Text(
-                    _product.title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      height: 1.3,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _product.title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                      if (_isLoadingDetail)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF6A1B9A),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  const SizedBox(height: 14),
 
                   // Preço
                   Container(

@@ -1,6 +1,6 @@
 import '../../domain/entities/product.dart';
 
-enum ProductStatus { initial, loading, success, error }
+enum ProductStatus { initial, loading, success, error, unauthorized }
 
 class ProductState {
   final ProductStatus status;

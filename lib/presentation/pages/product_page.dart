@@ -174,6 +174,25 @@ class _ProductPageState extends State<ProductPage> {
                 ),
               );
 
+            case ProductStatus.unauthorized:
+              // Executa logout e redireciona — usando addPostFrameCallback
+              // para não chamar Navigator durante o build
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                await SessionController.instance.logout();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Sessão expirada. Faça login novamente.'),
+                    backgroundColor: Colors.orange,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                Navigator.pushNamedAndRemoveUntil(
+                  context, AppRoutes.login, (route) => false,
+                );
+              });
+              return const Center(child: CircularProgressIndicator());
+
             case ProductStatus.error:
               return Center(
                 child: Padding(

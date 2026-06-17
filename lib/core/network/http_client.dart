@@ -74,10 +74,12 @@ class HttpClient {
   }
 
   HttpResponse _handleResponse(http.Response response,
-      {List<int> acceptedCodes = const [200]}) {
+    {List<int> acceptedCodes = const [200]}) {
     if (acceptedCodes.contains(response.statusCode)) {
       final data = jsonDecode(response.body);
       return HttpResponse(data: data);
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedFailure();
     } else {
       throw Failure('Erro no servidor: ${response.statusCode}');
     }
